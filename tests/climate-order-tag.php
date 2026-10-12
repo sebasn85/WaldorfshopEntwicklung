@@ -34,12 +34,20 @@ namespace Plenty\Modules\Tag\Contracts {
         }
     }
 }
-namespace IO\Models { class LocalizedOrder { public $order; } }
-namespace IO\Services {
-    class OrderService {
-        public static $place;
-        public function placeOrder(): \IO\Models\LocalizedOrder { return (self::$place)(); }
-        public function getLogger($name) { return $GLOBALS['logger']; }
+namespace Plenty\Plugin { class Middleware {} }
+namespace Plenty\Plugin\Log {
+    trait Loggable { public function getLogger($name) { return $GLOBALS['logger']; } }
+}
+namespace Plenty\Plugin\Http {
+    class Request {
+        public $method = 'POST'; public $uri = '/rest/io/order';
+        public function getMethod() { return $this->method; }
+        public function getRequestUri() { return $this->uri; }
+    }
+    class Response {
+        public $code = 200; public $body;
+        public function status() { return $this->code; }
+        public function content() { return $this->body; }
     }
 }
 namespace WaldorfshopSeoTest\Services {
@@ -49,7 +57,7 @@ namespace WaldorfshopSeoTest\Services {
     }
 }
 namespace Plenty\Modules\Webshop\Template\Providers {
-    class TemplateServiceProvider { public function getApplication() { return $GLOBALS['application']; } }
+    class TemplateServiceProvider { public function getApplication() { return $GLOBALS['application']; } public function addGlobalMiddleware($class) { $GLOBALS['middleware'] = $class; } }
 }
 namespace {
     use WaldorfshopSeoTest\Services\ClimateOrderService;
@@ -70,8 +78,9 @@ namespace {
         public function bind($from, $to) { $this->bindings[$from] = $to; }
     };
     (new \WaldorfshopSeoTest\Providers\SeoTestServiceProvider())->register();
-    check($GLOBALS['application']->bindings[\IO\Services\OrderService::class] === ClimateOrderService::class,
-        'Shop order placement must resolve to the climate-aware service');
+    check(!class_exists('IO\\Services\\OrderService', false), 'Bootstrap succeeds with no IO classes loaded');
+    check($GLOBALS['application']->bindings === [], 'Bootstrap never replaces or eagerly loads the IO order service');
+    check($GLOBALS['middleware'] === ClimateOrderService::class, 'SDK middleware observes webshop placement');
     $repo = new \Plenty\Modules\Basket\Contracts\BasketRepositoryContract();
     $repo->basket = (object)['id'=>10];
     $consent = new \WaldorfshopSeoTest\Services\ClimateContributionService();
@@ -87,41 +96,61 @@ namespace {
         \Plenty\Modules\Authorization\Services\AuthHelper::class => new \Plenty\Modules\Authorization\Services\AuthHelper(),
         ClimateOrderTagService::class => $tagService
     ];
-    $placed = 0;
-    $result = new \IO\Models\LocalizedOrder();
-    $result->order = (object)['id'=>101];
-    \IO\Services\OrderService::$place = function () use (&$placed, $result, $consent) {
-        $placed++;
-        $consent->accepted = false; // Checkout consumes its consent/basket.
-        return $result;
-    };
+    $request = new \Plenty\Plugin\Http\Request();
+    $response = new \Plenty\Plugin\Http\Response();
+    $response->body = json_encode(['data'=>['order'=>['id'=>101]], 'events'=>[], 'notifications'=>[]]);
     $service = new ClimateOrderService();
-    check($service->placeOrder() === $result, 'No-contribution order returns the normal checkout result');
-    check($placed === 1 && $relations->writes === 0, 'No-contribution checkout places once and has no climate tag');
+    $service->before($request);
+    check($service->after($request, $response) === $response && $relations->writes === 0,
+        'No contribution preserves the response and creates no tag');
     $consent->accepted = true;
-    check($service->placeOrder() === $result, 'Contribution checkout still returns the normal result');
-    check($placed === 2 && $relations->findRelationship(88, 101, 'order') !== null,
-        'Successful order receives the tag even after checkout consumes its session');
-    check(isset($relations->relations['order'][101][99]), 'Existing order tags are preserved');
+    $service->before($request);
+    $consent->accepted = false; // Checkout consumes consent before returning.
+    check($service->after($request, $response) === $response, 'Successful checkout response remains unchanged');
+    check($relations->findRelationship(88, 101, 'order') !== null, 'Snapshot survives checkout consuming consent');
+    check(isset($relations->relations['order'][101][99]), 'Unrelated order tags are preserved');
     $tagService->mark(101);
-    check($relations->writes === 1, 'Repeated tagging does not duplicate an existing relation');
+    check($relations->writes === 1, 'Repeated tagging is idempotent');
     $writes = $relations->writes;
+    $response->body = json_encode(['data'=>['order'=>['id'=>102]]]);
+    $service->after($request, $response);
+    check($relations->writes === $writes, 'A consumed snapshot cannot tag a later response');
     $consent->accepted = true;
-    \IO\Services\OrderService::$place = function () { throw new \RuntimeException('Checkout failed'); };
-    try { $service->placeOrder(); throw new \LogicException('Unexpected checkout success'); }
-    catch (\RuntimeException $error) { check($relations->writes === $writes, 'Failed or abandoned checkout creates no tag'); }
-    $result->order->id = 102;
-    \IO\Services\OrderService::$place = function () use ($result) { return $result; };
+    foreach ([['GET','/rest/io/order'], ['POST','/rest/orders'], ['POST','/rest/io/order/102'],
+              ['POST','/rest/waldorfshop/climate-contribution'], ['POST','/checkout']] as $route) {
+        $request->method = $route[0]; $request->uri = $route[1];
+        $service->before($request); $service->after($request, $response);
+        check($relations->writes === $writes, 'Non-placement route must never receive a tag');
+    }
+    $request->method = 'POST'; $request->uri = '/rest/io/order';
+    foreach ([400, 422, 500, 302] as $status) {
+        $response->code = $status;
+        $service->before($request);
+        check($service->after($request, $response) === $response && $relations->writes === $writes,
+            'Failed or redirected checkout never receives a tag');
+    }
+    $response->code = 200;
+    foreach (['not json', '{}', '{"data":{"order":{"id":0}}}', '{"data":null}'] as $body) {
+        $response->body = $body;
+        $service->before($request); $service->after($request, $response);
+        check($relations->writes === $writes, 'Response without a persisted order ID cannot be tagged');
+    }
+    $request->uri = '/rest/io/order/?initialRestCall=true';
+    $response->body = json_encode(['data'=>['order'=>['id'=>102]]]);
     $relations->fail = true;
-    check($service->placeOrder() === $result, 'Tag storage failure cannot turn an existing order into a failed checkout');
+    $service->before($request);
+    check($service->after($request, $response) === $response, 'Tag error cannot change an existing order response');
     check(count($GLOBALS['logger']->errors) === 1 && $GLOBALS['logger']->errors[0][1]['orderId'] === 102,
-        'Tag failure is logged against the specific created order for recovery');
+        'Storage failure logs the correct order for recovery');
     $relations->fail = false;
+    $service->before($request); $service->after($request, $response);
+    check($relations->findRelationship(88, 102, 'order') !== null, 'Placement with query string receives its tag');
+    $writes = $relations->writes;
     $tags->tag = null;
-    try { $tagService->mark(102); throw new \LogicException('Unexpected missing-tag success'); }
-    catch (\RuntimeException $error) { check($relations->writes === $writes, 'A missing configured tag causes no unrelated writes'); }
+    try { $tagService->mark(103); throw new \LogicException('Unexpected missing-tag success'); }
+    catch (\RuntimeException $error) { check($relations->writes === $writes, 'Missing tag cannot cause unrelated writes'); }
     try { $tagService->mark(0); throw new \LogicException('Unexpected invalid-order success'); }
-    catch (\InvalidArgumentException $error) { check($relations->writes === $writes, 'A non-persisted order cannot be tagged'); }
-    check(!($GLOBALS['unguarded'] ?? false), 'Internal tag access restores the normal authorization context');
+    catch (\InvalidArgumentException $error) { check($relations->writes === $writes, 'Invalid order cannot be tagged'); }
+    check(!($GLOBALS['unguarded'] ?? false), 'Tag access restores the normal authorization context');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
 }
