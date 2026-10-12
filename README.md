@@ -65,3 +65,10 @@ Updates the authoritative checkout and basket through Ceres AJAX response events
 
 ### 0.5.7
 Allows the voluntary EUR 0.50 contribution for net-price baskets, including Switzerland and other VAT-free export destinations. The exact 50-cent total-change and unchanged merchandise-value checks remain enforced. Verify country and language changes in unlinked test set 429 before any live rollout.
+
+### Climate order tagging (0.5.18)
+The normal IO webshop order service snapshots the selected contribution before placing the order and adds the existing order tag `Klimaauftrag` only after successful placement. Create this tag with availability `order` before enabling the contribution (Waldorfshop tag ID 353). It preserves other tags and skips existing climate tag relationships. Manual and marketplace creation do not call this webshop placement wrapper.
+
+Tagging uses Plenty's internal authorization helper for the fixed tag and the server-returned order ID. It does not expose a tagging endpoint to storefront clients. A tag error is logged as `climateOrderTagFailed` with the order ID and does not turn an already-created order into a failed checkout. Check this log for recovery if tag writes fail.
+
+Filter sales orders by this tag and order date to count opted-in orders. Compare with all completed shop orders in the same period; deduplicate by customer if unique customers are needed. This does not measure abandoned checkouts. Contract checks run in CI; verify a sandbox order with and without contribution before live rollout.
