@@ -2,6 +2,7 @@
 namespace WaldorfshopSeoTest\Services;
 
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
+use Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract;
 use Plenty\Plugin\Http\Request;
 use Plenty\Plugin\Http\Response;
 use Plenty\Plugin\Log\Loggable;
@@ -14,21 +15,31 @@ class ClimateOrderService extends Middleware
 
     private $accepted = false;
     private $basketId = 0;
+    private $previousOrderId = 0;
 
     private function isPlacement(Request $request): bool
     {
-        return $request->getMethod() === 'POST'
-            && rtrim(explode('?', $request->getRequestUri(), 2)[0], '/') === '/rest/io/order';
+        return ($request->getMethod() === 'POST' && $this->path($request) === '/rest/io/order')
+            || ($request->getMethod() === 'GET'
+                && preg_match('#^/(?:(?:de|en|fr|it|es|nl)/)?place-order$#', $this->path($request)) === 1);
+    }
+
+    private function path(Request $request): string
+    {
+        return rtrim(explode('?', $request->getRequestUri(), 2)[0], '/');
     }
 
     public function before(Request $request)
     {
         $this->accepted = false;
         $this->basketId = 0;
+        $this->previousOrderId = 0;
         if (!$this->isPlacement($request)) {
             return;
         }
         try {
+            $this->previousOrderId = (int)pluginApp(SessionStorageRepositoryContract::class)
+                ->getSessionValue(SessionStorageRepositoryContract::LATEST_ORDER_ID);
             $basket = pluginApp(BasketRepositoryContract::class)->load();
             $this->accepted = pluginApp(ClimateContributionService::class)->selected($basket);
             $this->basketId = $basket ? (int)$basket->id : 0;
@@ -44,19 +55,33 @@ class ClimateOrderService extends Middleware
     {
         $accepted = $this->accepted;
         $this->accepted = false;
-        if (!$accepted || !$this->isPlacement($request)
-            || $response->status() < 200 || $response->status() >= 300) {
+        if (!$accepted || !$this->isPlacement($request)) {
             return $response;
         }
-        // IO ApiResponse serializes LocalizedOrder as data.order. Use only the
-        // persisted ID returned by the server, never an ID supplied by a client.
-        $data = json_decode($response->content(), true);
-        $orderId = is_array($data) ? (int)($data['data']['order']['id'] ?? 0) : 0;
-        if ($orderId <= 0) {
-            return $response;
-        }
-
+        $orderId = 0;
         try {
+            if ($request->getMethod() === 'GET') {
+                // PlaceOrderController.complete stores the persisted order ID
+                // before executing payment/redirecting. Failed validation leaves
+                // LATEST_ORDER_ID unchanged. Never use a request/query order ID.
+                if ($response->status() < 200 || $response->status() >= 400) {
+                    return $response;
+                }
+                $orderId = (int)pluginApp(SessionStorageRepositoryContract::class)
+                    ->getSessionValue(SessionStorageRepositoryContract::LATEST_ORDER_ID);
+                if ($orderId <= 0 || $orderId === $this->previousOrderId) {
+                    return $response;
+                }
+            } else {
+                if ($response->status() < 200 || $response->status() >= 300) {
+                    return $response;
+                }
+                $data = json_decode($response->content(), true);
+                $orderId = is_array($data) ? (int)($data['data']['order']['id'] ?? 0) : 0;
+                if ($orderId <= 0) {
+                    return $response;
+                }
+            }
             pluginApp(ClimateOrderTagService::class)->mark($orderId);
         } catch (\Throwable $error) {
             // Preserve the existing order response, including payment data.
