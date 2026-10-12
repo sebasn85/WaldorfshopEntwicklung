@@ -34,6 +34,13 @@ namespace Plenty\Modules\Tag\Contracts {
         }
     }
 }
+namespace Plenty\Modules\Webshop\Contracts {
+    class SessionStorageRepositoryContract {
+        const LATEST_ORDER_ID = 'latestOrderId';
+        public $orderId = 90;
+        public function getSessionValue($key) { return $this->orderId; }
+    }
+}
 namespace Plenty\Plugin { class Middleware {} }
 namespace Plenty\Plugin\Log {
     trait Loggable { public function getLogger($name) { return $GLOBALS['logger']; } }
@@ -90,7 +97,9 @@ namespace {
     // An existing, unrelated tag must survive every operation.
     $relations->relations['order'][101][99] = ['tagId'=>99];
     $tagService = new ClimateOrderTagService($tags, $relations);
+    $session = new \Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract();
     $GLOBALS['services'] = [
+        \Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract::class => $session,
         \Plenty\Modules\Basket\Contracts\BasketRepositoryContract::class => $repo,
         \WaldorfshopSeoTest\Services\ClimateContributionService::class => $consent,
         \Plenty\Modules\Authorization\Services\AuthHelper::class => new \Plenty\Modules\Authorization\Services\AuthHelper(),
@@ -146,6 +155,40 @@ namespace {
     $service->before($request); $service->after($request, $response);
     check($relations->findRelationship(88, 102, 'order') !== null, 'Placement with query string receives its tag');
     $writes = $relations->writes;
+    // Regression: the real Waldorfshop checkout uses GET /place-order,
+    // completes the order in the session, and returns an HTML redirect.
+    $request->method = 'GET';
+    $response->code = 302; $response->body = '<html>Redirecting</html>';
+    foreach (['', '/de', '/en', '/fr', '/it', '/es', '/nl'] as $index => $language) {
+        $request->uri = $language.'/place-order/?redirectParam=checkout&orderId=999999';
+        $session->orderId = 200 + $index;
+        $consent->accepted = true;
+        $service->before($request);
+        $consent->accepted = false;
+        $session->orderId = 300 + $index;
+        check($service->after($request, $response) === $response, 'Real redirect response is preserved');
+        check($relations->findRelationship(88, 300 + $index, 'order') !== null,
+            'Real placement tags only the newly completed server-side order in every language');
+        check($relations->findRelationship(88, 999999, 'order') === null, 'Query order ID is never trusted');
+    }
+    $writes = $relations->writes;
+    $consent->accepted = true;
+    $service->before($request); $service->after($request, $response);
+    check($relations->writes === $writes, 'Validation redirect cannot tag a previous session order');
+    $consent->accepted = false;
+    $service->before($request); $session->orderId = 401; $service->after($request, $response);
+    check($relations->writes === $writes, 'GET placement without contribution creates no tag');
+    $consent->accepted = true;
+    $service->before($request); $session->orderId = 0; $service->after($request, $response);
+    check($relations->writes === $writes, 'Missing server-side order ID creates no tag');
+    $service->before($request); $session->orderId = 402; $response->code = 500; $service->after($request, $response);
+    check($relations->writes === $writes, 'GET server error creates no tag');
+    $response->code = 302;
+    foreach (['/execute-payment/403', '/bestellbestaetigung', '/checkout', '/place-order/403'] as $uri) {
+        $request->uri = $uri; $service->before($request); $session->orderId++;
+        $service->after($request, $response);
+        check($relations->writes === $writes, 'Other GET routes cannot tag orders');
+    }
     $tags->tag = null;
     try { $tagService->mark(103); throw new \LogicException('Unexpected missing-tag success'); }
     catch (\RuntimeException $error) { check($relations->writes === $writes, 'Missing tag cannot cause unrelated writes'); }
