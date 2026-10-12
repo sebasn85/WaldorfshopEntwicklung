@@ -9,6 +9,10 @@ class SeoTestServiceProvider extends TemplateServiceProvider
     public function register()
     {
         $this->getApplication()->register(ClimateRouteServiceProvider::class);
+        $this->getApplication()->bind(
+            \IO\Services\OrderService::class,
+            \WaldorfshopSeoTest\Services\ClimateOrderService::class
+        );
     }
 
     public function boot()
