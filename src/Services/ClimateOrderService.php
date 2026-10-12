@@ -1,35 +1,70 @@
 <?php
 namespace WaldorfshopSeoTest\Services;
 
-use IO\Models\LocalizedOrder;
-use IO\Services\OrderService;
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
+use Plenty\Plugin\Http\Request;
+use Plenty\Plugin\Http\Response;
+use Plenty\Plugin\Log\Loggable;
+use Plenty\Plugin\Middleware;
 
-/** Extends only the normal webshop placement, not manual/marketplace orders. */
-class ClimateOrderService extends OrderService
+/** Observes normal webshop placement without inheriting another plugin class. */
+class ClimateOrderService extends Middleware
 {
-    public function placeOrder(): LocalizedOrder
-    {
-        // The checkout can consume/reset its basket and session when placing an
-        // order. Snapshot consent beforehand, but write no tag until it succeeds.
-        $basket = pluginApp(BasketRepositoryContract::class)->load();
-        $accepted = pluginApp(ClimateContributionService::class)->selected($basket);
-        $basketId = $basket ? (int)$basket->id : 0;
-        $result = parent::placeOrder();
+    use Loggable;
 
-        if ($accepted) {
-            $orderId = $result->order ? (int)$result->order->id : 0;
-            try {
-                pluginApp(ClimateOrderTagService::class)->mark($orderId);
-            } catch (\Throwable $error) {
-                // The order already exists. Never cause a second order/payment
-                // attempt because the analytics tag could not be written.
-                $this->getLogger(self::class)->error(
-                    'WaldorfshopSeoTest::Debug.climateOrderTagFailed',
-                    ['orderId' => $orderId, 'basketId' => $basketId, 'message' => $error->getMessage()]
-                );
-            }
+    private $accepted = false;
+    private $basketId = 0;
+
+    private function isPlacement(Request $request): bool
+    {
+        return $request->getMethod() === 'POST'
+            && rtrim(explode('?', $request->getRequestUri(), 2)[0], '/') === '/rest/io/order';
+    }
+
+    public function before(Request $request)
+    {
+        $this->accepted = false;
+        $this->basketId = 0;
+        if (!$this->isPlacement($request)) {
+            return;
         }
-        return $result;
+        try {
+            $basket = pluginApp(BasketRepositoryContract::class)->load();
+            $this->accepted = pluginApp(ClimateContributionService::class)->selected($basket);
+            $this->basketId = $basket ? (int)$basket->id : 0;
+        } catch (\Throwable $error) {
+            $this->getLogger(self::class)->error(
+                'WaldorfshopSeoTest::Debug.climateOrderTagFailed',
+                ['orderId' => 0, 'message' => $error->getMessage()]
+            );
+        }
+    }
+
+    public function after(Request $request, Response $response): Response
+    {
+        $accepted = $this->accepted;
+        $this->accepted = false;
+        if (!$accepted || !$this->isPlacement($request)
+            || $response->status() < 200 || $response->status() >= 300) {
+            return $response;
+        }
+        // IO ApiResponse serializes LocalizedOrder as data.order. Use only the
+        // persisted ID returned by the server, never an ID supplied by a client.
+        $data = json_decode($response->content(), true);
+        $orderId = is_array($data) ? (int)($data['data']['order']['id'] ?? 0) : 0;
+        if ($orderId <= 0) {
+            return $response;
+        }
+
+        try {
+            pluginApp(ClimateOrderTagService::class)->mark($orderId);
+        } catch (\Throwable $error) {
+            // Preserve the existing order response, including payment data.
+            $this->getLogger(self::class)->error(
+                'WaldorfshopSeoTest::Debug.climateOrderTagFailed',
+                ['orderId' => $orderId, 'basketId' => $this->basketId, 'message' => $error->getMessage()]
+            );
+        }
+        return $response;
     }
 }
