@@ -11,6 +11,8 @@ jobs:
         run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Contribution calculation contracts
         run: php tests/climate-contribution.php
+      - name: Climate order tagging contracts
+        run: php tests/climate-order-tag.php
       - name: JavaScript syntax
         run: node --check resources/js/climate-contribution.js
       - name: JSON syntax
