@@ -16,6 +16,7 @@ namespace Plenty\Modules\Tag\Contracts {
     class TagRepositoryContract {
         public $tag;
         public function getTagByName($name) {
+            if (!($GLOBALS['unguarded'] ?? false)) throw new \RuntimeException('Guest has no tag permissions');
             if ($name !== 'Klimaauftrag') throw new \RuntimeException('Unexpected tag name');
             return $this->tag;
         }
