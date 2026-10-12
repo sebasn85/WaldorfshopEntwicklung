@@ -150,7 +150,7 @@ class ClimateContributionService
             'netDisplay' => $this->session->getOrder() && $this->session->getOrder()->isNet
                 && count($before['totalVats'] ?? []) === 0,
             'acceptedAt' => $selected ? time() : null,
-            'textVersion' => '2026-10-09',
+            'textVersion' => '2026-10-12',
             'calculationVersion' => 2
         ]);
 
