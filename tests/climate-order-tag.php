@@ -2,6 +2,16 @@
 namespace Plenty\Modules\Basket\Contracts {
     class BasketRepositoryContract { public $basket; public function load() { return $this->basket; } }
 }
+namespace Plenty\Modules\Authorization\Services {
+    class AuthHelper {
+        public function processUnguarded($callback) {
+            $previous = $GLOBALS['unguarded'] ?? false;
+            $GLOBALS['unguarded'] = true;
+            try { return $callback(); }
+            finally { $GLOBALS['unguarded'] = $previous; }
+        }
+    }
+}
 namespace Plenty\Modules\Tag\Contracts {
     class TagRepositoryContract {
         public $tag;
@@ -73,6 +83,7 @@ namespace {
     $GLOBALS['services'] = [
         \Plenty\Modules\Basket\Contracts\BasketRepositoryContract::class => $repo,
         \WaldorfshopSeoTest\Services\ClimateContributionService::class => $consent,
+        \Plenty\Modules\Authorization\Services\AuthHelper::class => new \Plenty\Modules\Authorization\Services\AuthHelper(),
         ClimateOrderTagService::class => $tagService
     ];
     $placed = 0;
@@ -110,5 +121,6 @@ namespace {
     catch (\RuntimeException $error) { check($relations->writes === $writes, 'A missing configured tag causes no unrelated writes'); }
     try { $tagService->mark(0); throw new \LogicException('Unexpected invalid-order success'); }
     catch (\InvalidArgumentException $error) { check($relations->writes === $writes, 'A non-persisted order cannot be tagged'); }
+    check(!($GLOBALS['unguarded'] ?? false), 'Internal tag access restores the normal authorization context');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
 }
