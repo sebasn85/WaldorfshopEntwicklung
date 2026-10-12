@@ -9,10 +9,9 @@ class SeoTestServiceProvider extends TemplateServiceProvider
     public function register()
     {
         $this->getApplication()->register(ClimateRouteServiceProvider::class);
-        $this->getApplication()->bind(
-            \IO\Services\OrderService::class,
-            \WaldorfshopSeoTest\Services\ClimateOrderService::class
-        );
+        // Only SDK classes are loaded at bootstrap; IO stays responsible for
+        // creating orders. Observe the successful placement response instead.
+        $this->addGlobalMiddleware(\WaldorfshopSeoTest\Services\ClimateOrderService::class);
     }
 
     public function boot()
