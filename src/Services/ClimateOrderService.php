@@ -56,7 +56,8 @@ class ClimateOrderService
     {
         $result = [];
         foreach ($items ?? [] as $item) {
-            $id = (int)$item->$variationKey;
+            $id = $variationKey === 'variationId'
+                ? (int)$item->variationId : (int)$item->itemVariationId;
             if ($id <= 0) {
                 continue;
             }
