@@ -6,6 +6,7 @@ use Plenty\Modules\Webshop\Template\Providers\TemplateServiceProvider;
 /** Template overrides and optional, plugin-set-scoped shipping contribution. */
 class SeoTestServiceProvider extends TemplateServiceProvider
 {
+    use \Plenty\Plugin\Log\Loggable;
     public function register()
     {
         $this->getApplication()->register(ClimateRouteServiceProvider::class);
@@ -16,6 +17,10 @@ class SeoTestServiceProvider extends TemplateServiceProvider
 
     public function boot()
     {
+        $this->getLogger(self::class)->error(
+            'WaldorfshopSeoTest::Debug.climateMiddlewareProviderBoot',
+            ['version' => '0.5.23', 'diagnosticOnly' => true, 'stage' => 'providerBoot']
+        );
         pluginApp(\Plenty\Plugin\Events\Dispatcher::class)->listen(
             \Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated::class,
             function ($event) {
