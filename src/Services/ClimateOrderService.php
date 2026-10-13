@@ -13,6 +13,7 @@ class ClimateOrderService extends Middleware
 {
     use Loggable;
 
+    const TRACE_KEY = 'WaldorfshopSeoTest.middlewareTrace.v1';
     private $probeSeen = false;
     private $accepted = false;
     private $basketId = 0;
@@ -39,13 +40,13 @@ class ClimateOrderService extends Middleware
 
     public function before(Request $request)
     {
-        if ($this->isProbe($request)) {
-            $this->probeSeen = true;
-            $this->getLogger(self::class)->error(
-                'WaldorfshopSeoTest::Debug.climateMiddlewareBefore',
-                ['version' => '0.5.23', 'diagnosticOnly' => true, 'stage' => 'before', 'path' => $this->path($request), 'method' => $request->getMethod(), 'beforeSeenOnThisInstance' => $this->probeSeen]
-            );
-        }
+        $this->probeSeen = true;
+        $session = pluginApp(SessionStorageRepositoryContract::class);
+        $trace = $session->getSessionValue(self::TRACE_KEY);
+        $trace = is_array($trace) ? $trace : [];
+        $trace['before'] = ['version'=>'0.5.24', 'path'=>$this->path($request),
+            'method'=>$request->getMethod(), 'beforeSeenOnThisInstance'=>$this->probeSeen];
+        $session->setSessionValue(self::TRACE_KEY, $trace);
         $this->accepted = false;
         $this->basketId = 0;
         $this->previousOrderId = 0;
@@ -68,12 +69,13 @@ class ClimateOrderService extends Middleware
 
     public function after(Request $request, Response $response): Response
     {
-        if ($this->isProbe($request)) {
-            $this->getLogger(self::class)->error(
-                'WaldorfshopSeoTest::Debug.climateMiddlewareAfter',
-                ['version' => '0.5.23', 'diagnosticOnly' => true, 'stage' => 'after', 'path' => $this->path($request), 'method' => $request->getMethod(), 'beforeSeenOnThisInstance' => $this->probeSeen]
-            );
-        }
+        $session = pluginApp(SessionStorageRepositoryContract::class);
+        $trace = $session->getSessionValue(self::TRACE_KEY);
+        $trace = is_array($trace) ? $trace : [];
+        $trace['after'] = ['version'=>'0.5.24', 'path'=>$this->path($request),
+            'method'=>$request->getMethod(), 'status'=>$response->status(),
+            'beforeSeenOnThisInstance'=>$this->probeSeen];
+        $session->setSessionValue(self::TRACE_KEY, $trace);
         $accepted = $this->accepted;
         $this->accepted = false;
         if (!$accepted || !$this->isPlacement($request)) {
