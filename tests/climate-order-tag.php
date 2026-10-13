@@ -77,9 +77,9 @@ namespace {
     require __DIR__.'/../src/Providers/SeoTestServiceProvider.php';
     $GLOBALS['checks'] = 0;
     $GLOBALS['logger'] = new class {
-        public $errors = []; public $infos = [];
+        public $errors = []; public $diagnostics = []; public $infos = [];
         public function info($key, $context) { $this->infos[] = [$key, $context]; }
-        public function error($key, $context) { $this->errors[] = [$key, $context]; }
+        public function error($key, $context) { if ($context['diagnosticOnly'] ?? false) { $this->diagnostics[] = [$key, $context]; } else { $this->errors[] = [$key, $context]; } }
     };
     $GLOBALS['application'] = new class {
         public $bindings = [];
@@ -204,8 +204,8 @@ namespace {
     $probeBefore->before($request);
     $probeAfter = new ClimateOrderService();
     check($probeAfter->after($request, $response) === $response, 'Diagnostic probe preserves API response');
-    check($GLOBALS['logger']->errors[1][1]['beforeSeenOnThisInstance'] === true
-        && $GLOBALS['logger']->errors[2][1]['beforeSeenOnThisInstance'] === false,
+    check($GLOBALS['logger']->diagnostics[count($GLOBALS['logger']->diagnostics)-2][1]['beforeSeenOnThisInstance'] === true
+        && $GLOBALS['logger']->diagnostics[count($GLOBALS['logger']->diagnostics)-1][1]['beforeSeenOnThisInstance'] === false,
         'Probe exposes separate middleware instances without placing or tagging an order');
     check($relations->writes === $writes, 'Diagnostic probe never writes tags');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
