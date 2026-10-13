@@ -9,13 +9,7 @@ class ClimateContributionResource extends ApiResource
 {
     public function index(): Response
     {
-        $state = pluginApp(ClimateContributionService::class)->state();
-        if ((string)$this->request->get('climateMiddlewareProbe', '') === '1') {
-            $state['middlewareTrace'] = pluginApp(\Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract::class)
-                ->getSessionValue(\WaldorfshopSeoTest\Services\ClimateOrderService::TRACE_KEY);
-            $state['diagnosticVersion'] = '0.5.24';
-        }
-        return $this->response->create($state, 200);
+        return $this->response->create(pluginApp(ClimateContributionService::class)->state(), 200);
     }
 
     public function store(): Response
