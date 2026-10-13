@@ -13,6 +13,7 @@ class ClimateOrderService extends Middleware
 {
     use Loggable;
 
+    private $probeSeen = false;
     private $accepted = false;
     private $basketId = 0;
     private $previousOrderId = 0;
@@ -29,8 +30,22 @@ class ClimateOrderService extends Middleware
         return rtrim(explode('?', $request->getRequestUri(), 2)[0], '/');
     }
 
+    private function isProbe(Request $request): bool
+    {
+        return $request->getMethod() === 'GET'
+            && $this->path($request) === '/rest/waldorfshop/climate-contribution'
+            && $request->get('climateMiddlewareProbe', '') === '1';
+    }
+
     public function before(Request $request)
     {
+        if ($this->isProbe($request)) {
+            $this->probeSeen = true;
+            $this->getLogger(self::class)->info(
+                'WaldorfshopSeoTest::Debug.climateMiddlewareBefore',
+                ['version' => '0.5.21', 'stage' => 'before', 'beforeSeenOnThisInstance' => $this->probeSeen]
+            );
+        }
         $this->accepted = false;
         $this->basketId = 0;
         $this->previousOrderId = 0;
@@ -53,6 +68,12 @@ class ClimateOrderService extends Middleware
 
     public function after(Request $request, Response $response): Response
     {
+        if ($this->isProbe($request)) {
+            $this->getLogger(self::class)->info(
+                'WaldorfshopSeoTest::Debug.climateMiddlewareAfter',
+                ['version' => '0.5.21', 'stage' => 'after', 'beforeSeenOnThisInstance' => $this->probeSeen]
+            );
+        }
         $accepted = $this->accepted;
         $this->accepted = false;
         if (!$accepted || !$this->isPlacement($request)) {
