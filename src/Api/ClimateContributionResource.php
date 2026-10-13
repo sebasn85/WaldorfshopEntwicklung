@@ -9,7 +9,11 @@ class ClimateContributionResource extends ApiResource
 {
     public function index(): Response
     {
-        return $this->response->create(pluginApp(ClimateContributionService::class)->state(), 200);
+        $state = pluginApp(ClimateContributionService::class)->state();
+        if ((string)$this->request->get('diagnostics') === '1') {
+            $state['orderDiagnostic'] = pluginApp(\WaldorfshopSeoTest\Services\ClimateOrderService::class)->diagnostics();
+        }
+        return $this->response->create($state, 200);
     }
 
     public function store(): Response
