@@ -41,9 +41,9 @@ class ClimateOrderService extends Middleware
     {
         if ($this->isProbe($request)) {
             $this->probeSeen = true;
-            $this->getLogger(self::class)->info(
+            $this->getLogger(self::class)->error(
                 'WaldorfshopSeoTest::Debug.climateMiddlewareBefore',
-                ['version' => '0.5.21', 'stage' => 'before', 'beforeSeenOnThisInstance' => $this->probeSeen]
+                ['version' => '0.5.22', 'diagnosticOnly' => true, 'stage' => 'before', 'beforeSeenOnThisInstance' => $this->probeSeen]
             );
         }
         $this->accepted = false;
@@ -69,9 +69,9 @@ class ClimateOrderService extends Middleware
     public function after(Request $request, Response $response): Response
     {
         if ($this->isProbe($request)) {
-            $this->getLogger(self::class)->info(
+            $this->getLogger(self::class)->error(
                 'WaldorfshopSeoTest::Debug.climateMiddlewareAfter',
-                ['version' => '0.5.21', 'stage' => 'after', 'beforeSeenOnThisInstance' => $this->probeSeen]
+                ['version' => '0.5.22', 'diagnosticOnly' => true, 'stage' => 'after', 'beforeSeenOnThisInstance' => $this->probeSeen]
             );
         }
         $accepted = $this->accepted;
