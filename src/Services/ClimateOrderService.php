@@ -32,9 +32,9 @@ class ClimateOrderService extends Middleware
 
     private function isProbe(Request $request): bool
     {
-        return $request->getMethod() === 'GET'
-            && $this->path($request) === '/rest/waldorfshop/climate-contribution'
-            && $request->get('climateMiddlewareProbe', '') === '1';
+        // Temporary diagnostics confined to the unlinked test plugin set.
+        // Log every callback so a route/request-parameter mismatch cannot hide it.
+        return true;
     }
 
     public function before(Request $request)
@@ -43,7 +43,7 @@ class ClimateOrderService extends Middleware
             $this->probeSeen = true;
             $this->getLogger(self::class)->error(
                 'WaldorfshopSeoTest::Debug.climateMiddlewareBefore',
-                ['version' => '0.5.22', 'diagnosticOnly' => true, 'stage' => 'before', 'beforeSeenOnThisInstance' => $this->probeSeen]
+                ['version' => '0.5.23', 'diagnosticOnly' => true, 'stage' => 'before', 'path' => $this->path($request), 'method' => $request->getMethod(), 'beforeSeenOnThisInstance' => $this->probeSeen]
             );
         }
         $this->accepted = false;
@@ -71,7 +71,7 @@ class ClimateOrderService extends Middleware
         if ($this->isProbe($request)) {
             $this->getLogger(self::class)->error(
                 'WaldorfshopSeoTest::Debug.climateMiddlewareAfter',
-                ['version' => '0.5.22', 'diagnosticOnly' => true, 'stage' => 'after', 'beforeSeenOnThisInstance' => $this->probeSeen]
+                ['version' => '0.5.23', 'diagnosticOnly' => true, 'stage' => 'after', 'path' => $this->path($request), 'method' => $request->getMethod(), 'beforeSeenOnThisInstance' => $this->probeSeen]
             );
         }
         $accepted = $this->accepted;
