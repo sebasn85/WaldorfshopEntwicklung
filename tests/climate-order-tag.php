@@ -37,8 +37,9 @@ namespace Plenty\Modules\Tag\Contracts {
 namespace Plenty\Modules\Webshop\Contracts {
     class SessionStorageRepositoryContract {
         const LATEST_ORDER_ID = 'latestOrderId';
-        public $orderId = 90;
-        public function getSessionValue($key) { return $this->orderId; }
+        public $orderId = 90; public $values = [];
+        public function getSessionValue($key) { return $key === self::LATEST_ORDER_ID ? $this->orderId : ($this->values[$key] ?? null); }
+        public function setSessionValue($key, $value) { $this->values[$key] = $value; }
     }
 }
 namespace Plenty\Plugin { class Middleware {} }
@@ -204,9 +205,10 @@ namespace {
     $probeBefore->before($request);
     $probeAfter = new ClimateOrderService();
     check($probeAfter->after($request, $response) === $response, 'Diagnostic probe preserves API response');
-    check($GLOBALS['logger']->diagnostics[count($GLOBALS['logger']->diagnostics)-2][1]['beforeSeenOnThisInstance'] === true
-        && $GLOBALS['logger']->diagnostics[count($GLOBALS['logger']->diagnostics)-1][1]['beforeSeenOnThisInstance'] === false,
-        'Probe exposes separate middleware instances without placing or tagging an order');
+    $trace = $session->getSessionValue(ClimateOrderService::TRACE_KEY);
+    check($trace['before']['beforeSeenOnThisInstance'] === true
+        && $trace['after']['beforeSeenOnThisInstance'] === false,
+        'Session trace exposes separate callback instances without relying on optional logs');
     check($relations->writes === $writes, 'Diagnostic probe never writes tags');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
 }
