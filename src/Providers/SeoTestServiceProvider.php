@@ -9,13 +9,17 @@ class SeoTestServiceProvider extends TemplateServiceProvider
     public function register()
     {
         $this->getApplication()->register(ClimateRouteServiceProvider::class);
-        // Only SDK classes are loaded at bootstrap; IO stays responsible for
-        // creating orders. Observe the successful placement response instead.
-        $this->addGlobalMiddleware(\WaldorfshopSeoTest\Services\ClimateOrderService::class);
+
     }
 
     public function boot()
     {
+        pluginApp(\Plenty\Plugin\Events\Dispatcher::class)->listen(
+            \Plenty\Modules\Order\Events\OrderCreated::class,
+            function ($event) {
+                pluginApp(\WaldorfshopSeoTest\Services\ClimateOrderService::class)->handle($event);
+            }
+        );
         pluginApp(\Plenty\Plugin\Events\Dispatcher::class)->listen(
             \Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated::class,
             function ($event) {
