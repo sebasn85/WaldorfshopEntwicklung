@@ -204,8 +204,8 @@ namespace {
     $probeBefore->before($request);
     $probeAfter = new ClimateOrderService();
     check($probeAfter->after($request, $response) === $response, 'Diagnostic probe preserves API response');
-    check($GLOBALS['logger']->infos[0][1]['beforeSeenOnThisInstance'] === true
-        && $GLOBALS['logger']->infos[1][1]['beforeSeenOnThisInstance'] === false,
+    check($GLOBALS['logger']->errors[1][1]['beforeSeenOnThisInstance'] === true
+        && $GLOBALS['logger']->errors[2][1]['beforeSeenOnThisInstance'] === false,
         'Probe exposes separate middleware instances without placing or tagging an order');
     check($relations->writes === $writes, 'Diagnostic probe never writes tags');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
