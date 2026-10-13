@@ -47,7 +47,8 @@ namespace Plenty\Plugin\Log {
 }
 namespace Plenty\Plugin\Http {
     class Request {
-        public $method = 'POST'; public $uri = '/rest/io/order';
+        public $method = 'POST'; public $uri = '/rest/io/order'; public $parameters = [];
+        public function get($key, $default = null) { return $this->parameters[$key] ?? $default; }
         public function getMethod() { return $this->method; }
         public function getRequestUri() { return $this->uri; }
     }
@@ -76,7 +77,8 @@ namespace {
     require __DIR__.'/../src/Providers/SeoTestServiceProvider.php';
     $GLOBALS['checks'] = 0;
     $GLOBALS['logger'] = new class {
-        public $errors = [];
+        public $errors = []; public $infos = [];
+        public function info($key, $context) { $this->infos[] = [$key, $context]; }
         public function error($key, $context) { $this->errors[] = [$key, $context]; }
     };
     $GLOBALS['application'] = new class {
@@ -195,5 +197,16 @@ namespace {
     try { $tagService->mark(0); throw new \LogicException('Unexpected invalid-order success'); }
     catch (\InvalidArgumentException $error) { check($relations->writes === $writes, 'Invalid order cannot be tagged'); }
     check(!($GLOBALS['unguarded'] ?? false), 'Tag access restores the normal authorization context');
+    $request->method = 'GET'; $request->uri = '/rest/waldorfshop/climate-contribution';
+    $request->parameters = ['climateMiddlewareProbe'=>'1'];
+    $writes = $relations->writes;
+    $probeBefore = new ClimateOrderService();
+    $probeBefore->before($request);
+    $probeAfter = new ClimateOrderService();
+    check($probeAfter->after($request, $response) === $response, 'Diagnostic probe preserves API response');
+    check($GLOBALS['logger']->infos[0][1]['beforeSeenOnThisInstance'] === true
+        && $GLOBALS['logger']->infos[1][1]['beforeSeenOnThisInstance'] === false,
+        'Probe exposes separate middleware instances without placing or tagging an order');
+    check($relations->writes === $writes, 'Diagnostic probe never writes tags');
     echo $GLOBALS['checks']." climate order tagging checks passed\n";
 }
