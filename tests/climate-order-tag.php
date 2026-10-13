@@ -37,8 +37,12 @@ namespace Plenty\Modules\Tag\Contracts {
 namespace Plenty\Modules\Webshop\Contracts {
     class SessionStorageRepositoryContract {
         public $consent;
-        public function getSessionValue($key) { return $this->consent; }
-        public function setSessionValue($key, $value) { $this->consent = $value; }
+        public $values = [];
+        public function getSessionValue($key) { return $key === 'consent' ? $this->consent : ($this->values[$key] ?? null); }
+        public function setSessionValue($key, $value) {
+            if ($key === 'consent') $this->consent = $value;
+            else $this->values[$key] = $value;
+        }
     }
 }
 namespace Plenty\Modules\Order\Events {
@@ -150,7 +154,10 @@ namespace {
     $repo->basket->currency = 'EUR'; $consent->active = false; $handler(new OrderCreated($order));
     check($relations->writes === $writes, 'Disabled contribution is ignored');
     $consent->active = true; $relations->fail = true; $handler(new OrderCreated($order));
-    check(count($GLOBALS['logger']->errors) === 1 && $GLOBALS['logger']->errors[0][1]['orderId'] === 102,
+    $tagErrors = array_values(array_filter($GLOBALS['logger']->errors, function ($entry) {
+        return $entry[0] === 'WaldorfshopSeoTest::Template.climateOrderTagFailed';
+    }));
+    check(count($tagErrors) === 1 && $tagErrors[0][1]['orderId'] === 102,
         'Storage error identifies the persisted order without failing the event');
     check(empty($session->consent['taggedOrderId']), 'Failed tagging does not consume consent');
     $relations->fail = false; $handler(new OrderCreated($order));
@@ -158,5 +165,20 @@ namespace {
     $tagService->mark(102);
     check($relations->writes === $writes + 1, 'Tag relationship writes are idempotent');
     check(!($GLOBALS['unguarded'] ?? false), 'Tag authorization restores guest context');
+    $records = $service->diagnostics();
+    check($records['version'] === '0.5.27' && count($records['events']) <= 12, 'Session diagnostic history is bounded and versioned');
+    $stages = array_column($records['events'], 'stage');
+    check(in_array('exception', $stages, true) && in_array('tagged', $stages, true), 'Diagnostics distinguish failed storage and successful tag');
+    check(end($stages) === 'probe', 'Explicit diagnostic probe proves logger/session path');
+    $session->consent = null; $handler(new OrderCreated($order));
+    $records = $service->diagnostics();
+    check(in_array('consent_missing', array_column($records['events'], 'stage'), true), 'Missing consent has an observable exit reason');
+    $savedLogger = $GLOBALS['logger'];
+    $GLOBALS['logger'] = new class { public function error($key, $context) { throw new \RuntimeException('Diagnostic unavailable'); } };
+    $session->consent = ['basketId'=>10, 'accepted'=>true];
+    $order->id = 104; $repo->basket->orderId = 104;
+    $handler(new OrderCreated($order));
+    check($relations->findRelationship(88,104,'order') !== null, 'Diagnostic logger failure does not prevent ordering or tagging');
+    $GLOBALS['logger'] = $savedLogger;
     echo $GLOBALS['checks']." native climate order tagging checks passed\n";
 }
