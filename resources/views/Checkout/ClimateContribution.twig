@@ -11,7 +11,10 @@
     "climateLoadFailed": "Non è stato possibile caricare il contributo volontario alla spedizione. Ricarica la pagina di pagamento.",
     "climateSelected": "Contributo volontario alla spedizione: 0,50 € sono inclusi nelle spese di spedizione.",
     "climateIneligible": "Il contributo è attualmente disponibile solo per carrelli in euro.",
-    "climateUpdating": "Il totale del tuo ordine è in fase di aggiornamento …"
+    "climateUpdating": "Il totale del tuo ordine è in fase di aggiornamento …",
+    "climateSupportLabel": "Sostieni il nostro approccio alla spedizione e il riciclo – 0,50 €",
+    "climateSupportExplanation": "Il tuo contributo sostiene DHL GoGreen Plus, le scatole in cartone riciclato, le spedizioni senza plastica, il riutilizzo dei materiali di imballaggio e i progetti di compensazione delle emissioni di CO₂.",
+    "climateSupportReassurance": "Seguiamo lo stesso approccio anche senza il tuo contributo."
   },
   "nl": {
     "climateTitle": "Vrijwillige bijdrage aan de verzending",
@@ -23,7 +26,10 @@
     "climateLoadFailed": "De vrijwillige verzendbijdrage kon niet worden geladen. Laad de afrekenpagina opnieuw.",
     "climateSelected": "Vrijwillige verzendbijdrage: € 0,50 is inbegrepen in de verzendkosten.",
     "climateIneligible": "De bijdrage is momenteel alleen beschikbaar voor winkelwagens in euro’s.",
-    "climateUpdating": "Het totaalbedrag van je bestelling wordt bijgewerkt …"
+    "climateUpdating": "Het totaalbedrag van je bestelling wordt bijgewerkt …",
+    "climateSupportLabel": "Steun onze verzendaanpak en recycling – € 0,50",
+    "climateSupportExplanation": "Je bijdrage ondersteunt DHL GoGreen Plus, gerecyclede kartonnen dozen, plasticvrije verzending, hergebruik van verpakkingsmateriaal en projecten voor CO₂-compensatie.",
+    "climateSupportReassurance": "Wij volgen dezelfde verzendaanpak ook zonder jouw bijdrage."
   },
   "de": {
     "climateTitle": "Freiwilliger Versandbeitrag",
@@ -35,7 +41,10 @@
     "climateLoadFailed": "Der freiwillige Versandbeitrag konnte nicht geladen werden. Bitte lade die Kasse neu.",
     "climateSelected": "Freiwilliger Versandbeitrag: 0,50 € ist in den Versandkosten enthalten.",
     "climateIneligible": "Der Beitrag ist aktuell nur für Warenkörbe in Euro verfügbar.",
-    "climateUpdating": "Dein Gesamtbetrag wird aktualisiert …"
+    "climateUpdating": "Dein Gesamtbetrag wird aktualisiert …",
+    "climateSupportLabel": "Versandkonzept & Recycling unterstützen – 0,50 €",
+    "climateSupportExplanation": "Dein Beitrag unterstützt DHL GoGreen Plus, Recyclingkartons, plastikfreien Versand, wiederverwendetes Verpackungsmaterial & CO₂-Kompensation-Projekte.",
+    "climateSupportReassurance": "Unser Versandkonzept gilt auch ohne deinen Beitrag."
   },
   "fr": {
     "climateTitle": "Contribution volontaire à l’expédition",
@@ -47,7 +56,10 @@
     "climateLoadFailed": "La contribution volontaire à l’expédition n’a pas pu être chargée. Veuillez recharger la page de paiement.",
     "climateSelected": "Contribution volontaire à l’expédition : 0,50 € sont inclus dans les frais de livraison.",
     "climateIneligible": "La contribution est actuellement disponible uniquement pour les paniers en euros.",
-    "climateUpdating": "Le montant total de votre commande est en cours de mise à jour …"
+    "climateUpdating": "Le montant total de votre commande est en cours de mise à jour …",
+    "climateSupportLabel": "Soutenir notre démarche d’expédition et le recyclage – 0,50 €",
+    "climateSupportExplanation": "Votre contribution soutient DHL GoGreen Plus, les cartons recyclés, l’expédition sans plastique, la réutilisation des matériaux d’emballage et les projets de compensation des émissions de CO₂.",
+    "climateSupportReassurance": "Nous suivons cette même démarche même sans votre contribution."
   },
   "es": {
     "climateTitle": "Aportación voluntaria al envío",
@@ -59,7 +71,10 @@
     "climateLoadFailed": "No se ha podido cargar la aportación voluntaria al envío. Vuelve a cargar la página de pago.",
     "climateSelected": "Aportación voluntaria al envío: los gastos de envío incluyen 0,50 €.",
     "climateIneligible": "La aportación solo está disponible actualmente para carritos en euros.",
-    "climateUpdating": "Se está actualizando el total de tu pedido …"
+    "climateUpdating": "Se está actualizando el total de tu pedido …",
+    "climateSupportLabel": "Apoya nuestra forma de enviar y el reciclaje – 0,50 €",
+    "climateSupportExplanation": "Tu aportación apoya DHL GoGreen Plus, las cajas de cartón reciclado, los envíos sin plástico, la reutilización de materiales de embalaje y los proyectos de compensación de emisiones de CO₂.",
+    "climateSupportReassurance": "Seguimos este mismo enfoque aunque no hagas una aportación."
   },
   "en": {
     "climateTitle": "Voluntary shipping contribution",
@@ -71,7 +86,10 @@
     "climateLoadFailed": "The voluntary shipping contribution could not be loaded. Please reload the checkout.",
     "climateSelected": "Voluntary shipping contribution: €0.50 is included in the shipping costs.",
     "climateIneligible": "The contribution is currently only available for baskets in euros.",
-    "climateUpdating": "Your order total is being updated …"
+    "climateUpdating": "Your order total is being updated …",
+    "climateSupportLabel": "Support our shipping approach & recycling – €0.50",
+    "climateSupportExplanation": "Your contribution supports DHL GoGreen Plus, recycled cardboard boxes, plastic-free shipping, reused packaging materials and CO₂ offsetting projects.",
+    "climateSupportReassurance": "We follow the same shipping approach even without your contribution."
   }
 } %}
 {% set climateCopy = climateDefaults[climateLanguage] | default(climateDefaults.de) %}
@@ -85,9 +103,9 @@
     data-ws-climate-updating="{{ (trans('WaldorfshopSeoTest::Template.climateUpdating') == 'WaldorfshopSeoTest::Template.climateUpdating' ? climateCopy.climateUpdating : trans('WaldorfshopSeoTest::Template.climateUpdating')) | escape('html_attr') }}">
     <label class="d-flex align-items-start mb-2" style="gap:.65rem;cursor:pointer">
         <input type="checkbox" data-ws-climate-checkbox disabled style="margin-top:.3rem;flex-shrink:0" aria-describedby="ws-climate-explanation ws-climate-status">
-        <strong>{{ (trans('WaldorfshopSeoTest::Template.climateLabel') == 'WaldorfshopSeoTest::Template.climateLabel' ? climateCopy.climateLabel : trans('WaldorfshopSeoTest::Template.climateLabel')) }}</strong>
+        <strong>{{ (trans('WaldorfshopSeoTest::Template.climateSupportLabel') == 'WaldorfshopSeoTest::Template.climateSupportLabel' ? climateCopy.climateSupportLabel : trans('WaldorfshopSeoTest::Template.climateSupportLabel')) }}</strong>
     </label>
-    <p id="ws-climate-explanation" class="small mb-2">{{ (trans('WaldorfshopSeoTest::Template.climateExplanation') == 'WaldorfshopSeoTest::Template.climateExplanation' ? climateCopy.climateExplanation : trans('WaldorfshopSeoTest::Template.climateExplanation')) }}</p>
+    <p id="ws-climate-explanation" class="small mb-2">{{ (trans('WaldorfshopSeoTest::Template.climateSupportExplanation') == 'WaldorfshopSeoTest::Template.climateSupportExplanation' ? climateCopy.climateSupportExplanation : trans('WaldorfshopSeoTest::Template.climateSupportExplanation')) }} <strong>{{ (trans('WaldorfshopSeoTest::Template.climateSupportReassurance') == 'WaldorfshopSeoTest::Template.climateSupportReassurance' ? climateCopy.climateSupportReassurance : trans('WaldorfshopSeoTest::Template.climateSupportReassurance')) }}</strong></p>
     <p class="small mb-0">{{ (trans('WaldorfshopSeoTest::Template.climateTerms') == 'WaldorfshopSeoTest::Template.climateTerms' ? climateCopy.climateTerms : trans('WaldorfshopSeoTest::Template.climateTerms')) }}</p>
     <p id="ws-climate-status" class="small mb-0 mt-2" data-ws-climate-status role="status" aria-live="polite"></p>
 </section>
