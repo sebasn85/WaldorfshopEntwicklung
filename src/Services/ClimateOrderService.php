@@ -88,16 +88,10 @@ class ClimateOrderService
         }
     }
 
-    /** Temporary test-build diagnostics; never contain addresses or contact data. */
+    /** Bounded session-only diagnostics; normal order events are not errors. */
     private function trace(string $stage, array $context = []): void
     {
         $record = array_merge(['version'=>self::DIAGNOSTIC_VERSION, 'stage'=>$stage], $context);
-        try {
-            // Error level makes the diagnostic visible without enabling INFO logs.
-            $this->getLogger(self::class)->error('WaldorfshopSeoTest::Template.climateOrderDiagnostic', $record);
-        } catch (\Throwable $ignored) {
-            // A diagnostic failure must not alter ordering or tagging.
-        }
         try {
             $session = pluginApp(SessionStorageRepositoryContract::class);
             $records = $session->getSessionValue(self::DIAGNOSTIC_KEY);
