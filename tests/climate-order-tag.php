@@ -123,6 +123,7 @@ namespace {
     $handler = $dispatcher->listeners[OrderCreated::class];
     $handler($event);
     check($relations->writes === 0, 'No consent creates no tag');
+    check(count($GLOBALS['logger']->errors) === 0, 'Missing consent must not produce an ERROR log');
     $session->consent = ['basketId'=>10, 'accepted'=>true];
     $handler($event);
     check($relations->findRelationship(88,101,'order') !== null, 'Matching opted-in basket tags the persisted native-event order');
@@ -153,6 +154,7 @@ namespace {
     check($relations->writes === $writes, 'Non-EUR basket is ignored');
     $repo->basket->currency = 'EUR'; $consent->active = false; $handler(new OrderCreated($order));
     check($relations->writes === $writes, 'Disabled contribution is ignored');
+    check(count($GLOBALS['logger']->errors) === 0, 'Normal diagnostic exits must not produce ERROR logs');
     $consent->active = true; $relations->fail = true; $handler(new OrderCreated($order));
     $tagErrors = array_values(array_filter($GLOBALS['logger']->errors, function ($entry) {
         return $entry[0] === 'WaldorfshopSeoTest::Template.climateOrderTagFailed';
