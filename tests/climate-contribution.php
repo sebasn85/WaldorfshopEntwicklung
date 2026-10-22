@@ -58,7 +58,7 @@ namespace IO\Services {
     }
 }
 namespace {
-    use WaldorfshopSeoTest\Services\ClimateContributionService;
+    use WaldorfshopErweiterungen\Services\ClimateContributionService;
     use Plenty\Modules\Order\Shipping\Events\AfterShippingCostCalculated;
     function pluginApp($class) { return $GLOBALS['services'][$class]; }
     function check($condition, $message) {
