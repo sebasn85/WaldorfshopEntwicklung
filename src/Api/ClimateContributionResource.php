@@ -1,9 +1,9 @@
 <?php
-namespace WaldorfshopSeoTest\Api;
+namespace WaldorfshopErweiterungen\Api;
 
 use IO\Api\ApiResource;
 use Plenty\Plugin\Http\Response;
-use WaldorfshopSeoTest\Services\ClimateContributionService;
+use WaldorfshopErweiterungen\Services\ClimateContributionService;
 
 class ClimateContributionResource extends ApiResource
 {
@@ -11,7 +11,7 @@ class ClimateContributionResource extends ApiResource
     {
         $state = pluginApp(ClimateContributionService::class)->state();
         if ((string)$this->request->get('diagnostics') === '1') {
-            $state['orderDiagnostic'] = pluginApp(\WaldorfshopSeoTest\Services\ClimateOrderService::class)->diagnostics();
+            $state['orderDiagnostic'] = pluginApp(\WaldorfshopErweiterungen\Services\ClimateOrderService::class)->diagnostics();
         }
         return $this->response->create($state, 200);
     }
