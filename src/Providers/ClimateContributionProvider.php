@@ -1,8 +1,8 @@
 <?php
-namespace WaldorfshopSeoTest\Providers;
+namespace WaldorfshopErweiterungen\Providers;
 
 use Plenty\Plugin\Templates\Twig;
-use WaldorfshopSeoTest\Services\ClimateContributionService;
+use WaldorfshopErweiterungen\Services\ClimateContributionService;
 
 class ClimateContributionProvider
 {
@@ -11,6 +11,6 @@ class ClimateContributionProvider
         if (!pluginApp(ClimateContributionService::class)->enabled()) {
             return '';
         }
-        return $twig->render('WaldorfshopSeoTest::Checkout.ClimateContribution');
+        return $twig->render('WaldorfshopErweiterungen::Checkout.ClimateContribution');
     }
 }
