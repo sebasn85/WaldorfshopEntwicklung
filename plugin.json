@@ -1,11 +1,11 @@
 {
-    "name": "WaldorfshopSeoTest",
-    "namespace": "WaldorfshopSeoTest",
+    "name": "WaldorfshopErweiterungen",
+    "namespace": "WaldorfshopErweiterungen",
     "type": "theme",
-    "version": "0.5.29",
+    "version": "0.5.30",
     "license": "AGPL-3.0",
     "isClosedSource": false,
-    "description": "SEO templates and optional EUR 0.50 shipping contribution. Climate branch for unlinked test plugin set 428.",
+    "description": "Waldorfshop extensions for SEO, checkout localisation and voluntary EUR 0.50 shipping contributions.",
     "author": "Universnatur GmbH",
     "authorIcon": "icon_author_xs.png",
     "pluginIcon": "icon_plugin_xs.png",
@@ -14,16 +14,16 @@
         "IO": "5.0.83",
         "Waldorfshop7": "5.0.74"
     },
-    "serviceProvider": "WaldorfshopSeoTest\\Providers\\SeoTestServiceProvider",
+    "serviceProvider": "WaldorfshopErweiterungen\\Providers\\SeoTestServiceProvider",
     "dataProviders": [
         {
-            "key": "WaldorfshopSeoTest\\Providers\\ClimateContributionProvider",
+            "key": "WaldorfshopErweiterungen\\Providers\\ClimateContributionProvider",
             "name": "Freiwilliger Versandbeitrag (0,50 EUR)",
             "description": "Opt-in vor der Bestellsumme.",
             "defaultLayoutContainer": "Ceres::Checkout.BeforeBasketTotals"
         },
         {
-            "key": "WaldorfshopSeoTest\\Providers\\ClimateScriptProvider",
+            "key": "WaldorfshopErweiterungen\\Providers\\ClimateScriptProvider",
             "name": "Versandbeitrag: Checkout-Skript",
             "description": "Synchronisiert den freiwilligen Beitrag mit der serverseitigen Berechnung.",
             "defaultLayoutContainer": "Ceres::Checkout.AfterScriptsLoaded"
