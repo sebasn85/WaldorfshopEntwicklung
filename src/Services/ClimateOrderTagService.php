@@ -1,5 +1,5 @@
 <?php
-namespace WaldorfshopSeoTest\Services;
+namespace WaldorfshopErweiterungen\Services;
 
 use Plenty\Modules\Tag\Contracts\TagRepositoryContract;
 use Plenty\Modules\Authorization\Services\AuthHelper;
