@@ -55,7 +55,7 @@ namespace Plenty\Modules\Order\Events {
 namespace Plenty\Plugin\Log {
     trait Loggable { public function getLogger($name) { return $GLOBALS['logger']; } }
 }
-namespace WaldorfshopSeoTest\Services {
+namespace WaldorfshopErweiterungen\Services {
     class ClimateContributionService {
         const CONSENT_KEY = 'consent';
         public $active = true;
@@ -75,8 +75,8 @@ namespace Plenty\Plugin\Events {
     }
 }
 namespace {
-    use WaldorfshopSeoTest\Services\ClimateOrderService;
-    use WaldorfshopSeoTest\Services\ClimateOrderTagService;
+    use WaldorfshopErweiterungen\Services\ClimateOrderService;
+    use WaldorfshopErweiterungen\Services\ClimateOrderTagService;
     use Plenty\Modules\Order\Events\OrderCreated;
     function pluginApp($class) { return $GLOBALS['services'][$class]; }
     function check($condition, $message) { if (!$condition) throw new \RuntimeException($message); $GLOBALS['checks']++; }
@@ -96,7 +96,7 @@ namespace {
     $repo->basket = (object)['id'=>10, 'currency'=>'EUR', 'orderId'=>null,
         'basketItems'=>[(object)['variationId'=>26432, 'quantity'=>1]]];
     $session = new \Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract();
-    $consent = new \WaldorfshopSeoTest\Services\ClimateContributionService();
+    $consent = new \WaldorfshopErweiterungen\Services\ClimateContributionService();
     $tags = new \Plenty\Modules\Tag\Contracts\TagRepositoryContract();
     $tags->tag = (object)['id'=>88];
     $relations = new \Plenty\Modules\Tag\Contracts\TagRelationshipRepositoryContract();
@@ -107,12 +107,12 @@ namespace {
     $GLOBALS['services'] = [
         \Plenty\Modules\Basket\Contracts\BasketRepositoryContract::class=>$repo,
         \Plenty\Modules\Webshop\Contracts\SessionStorageRepositoryContract::class=>$session,
-        \WaldorfshopSeoTest\Services\ClimateContributionService::class=>$consent,
+        \WaldorfshopErweiterungen\Services\ClimateContributionService::class=>$consent,
         \Plenty\Modules\Authorization\Services\AuthHelper::class=>new \Plenty\Modules\Authorization\Services\AuthHelper(),
         \Plenty\Plugin\Events\Dispatcher::class=>$dispatcher,
         ClimateOrderService::class=>$service, ClimateOrderTagService::class=>$tagService
     ];
-    $provider = new \WaldorfshopSeoTest\Providers\SeoTestServiceProvider();
+    $provider = new \WaldorfshopErweiterungen\Providers\SeoTestServiceProvider();
     $provider->register(); $provider->boot();
     check(!class_exists('IO\\Services\\OrderService', false), 'Bootstrap does not depend on IO inheritance');
     check(isset($dispatcher->listeners[OrderCreated::class]), 'Native order-created listener is registered');
@@ -157,7 +157,7 @@ namespace {
     check(count($GLOBALS['logger']->errors) === 0, 'Normal diagnostic exits must not produce ERROR logs');
     $consent->active = true; $relations->fail = true; $handler(new OrderCreated($order));
     $tagErrors = array_values(array_filter($GLOBALS['logger']->errors, function ($entry) {
-        return $entry[0] === 'WaldorfshopSeoTest::Template.climateOrderTagFailed';
+        return $entry[0] === 'WaldorfshopErweiterungen::Template.climateOrderTagFailed';
     }));
     check(count($tagErrors) === 1 && $tagErrors[0][1]['orderId'] === 102,
         'Storage error identifies the persisted order without failing the event');
