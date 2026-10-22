@@ -1,5 +1,5 @@
 <?php
-namespace WaldorfshopSeoTest\Services;
+namespace WaldorfshopErweiterungen\Services;
 
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
 use Plenty\Modules\Order\Events\OrderCreated;
@@ -12,6 +12,7 @@ class ClimateOrderService
     use Loggable;
 
     const DIAGNOSTIC_VERSION = '0.5.27';
+    // Keep the existing bounded session diagnostics across the rename.
     const DIAGNOSTIC_KEY = 'WaldorfshopSeoTest.climateOrderTrace.v1';
 
     public function handle(OrderCreated $event): void
@@ -82,7 +83,7 @@ class ClimateOrderService
             $this->trace('exception', ['orderId'=>$orderId, 'basketId'=>$basketId]);
             // An already-created order must remain successful if tagging fails.
             $this->getLogger(self::class)->error(
-                'WaldorfshopSeoTest::Template.climateOrderTagFailed',
+                'WaldorfshopErweiterungen::Template.climateOrderTagFailed',
                 ['orderId'=>(int)$order->id, 'basketId'=>$basketId, 'message'=>$error->getMessage()]
             );
         }
