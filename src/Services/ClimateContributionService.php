@@ -1,5 +1,5 @@
 <?php
-namespace WaldorfshopSeoTest\Services;
+namespace WaldorfshopErweiterungen\Services;
 
 use IO\Services\BasketService;
 use Plenty\Modules\Basket\Contracts\BasketRepositoryContract;
@@ -12,6 +12,7 @@ use Plenty\Plugin\ConfigRepository;
 class ClimateContributionService
 {
     const AMOUNT = 0.50;
+    // Retain existing basket consent when switching from the previous plugin.
     const CONSENT_KEY = 'WaldorfshopSeoTest.climateConsent.v1';
 
     private $session;
@@ -33,7 +34,7 @@ class ClimateContributionService
 
     public function enabled(): bool
     {
-        return $this->config->get('WaldorfshopSeoTest.climate.enabled', 'false') === 'true';
+        return $this->config->get('WaldorfshopErweiterungen.climate.enabled', 'false') === 'true';
     }
 
     public function eligible($basket): bool
