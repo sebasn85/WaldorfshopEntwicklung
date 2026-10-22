@@ -2,7 +2,7 @@
     "name": "WaldorfshopErweiterungen",
     "namespace": "WaldorfshopErweiterungen",
     "type": "theme",
-    "version": "0.5.30",
+    "version": "0.5.31",
     "license": "AGPL-3.0",
     "isClosedSource": false,
     "description": "Waldorfshop extensions for SEO, checkout localisation and voluntary EUR 0.50 shipping contributions.",
@@ -10,8 +10,8 @@
     "authorIcon": "icon_author_xs.png",
     "pluginIcon": "icon_plugin_xs.png",
     "require": {
-        "Ceres": "5.0.84",
-        "IO": "5.0.83",
+        "Ceres": "5.0.86",
+        "IO": "5.0.86",
         "Waldorfshop7": "5.0.74"
     },
     "serviceProvider": "WaldorfshopErweiterungen\\Providers\\SeoTestServiceProvider",
