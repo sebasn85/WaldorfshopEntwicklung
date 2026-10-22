@@ -1,4 +1,13 @@
-# WaldorfshopSeoTest
+# WaldorfshopErweiterungen
+
+## Rename preparation (0.5.30)
+
+Prepared from `WaldorfshopSeoTest` commit `0bd4bc42131a07fa7cc47195f273e2c9adb8a565`.
+The plugin identity, PHP namespaces, template references, translations and asset paths use the new name.
+The existing basket consent and bounded diagnostic session keys, public HTTP routes, contribution amount and order tag ID stay unchanged.
+The setting `WaldorfshopErweiterungen.climate.enabled` belongs to the new plugin and must be explicitly configured in an unlinked test set.
+Before any live approval, replace the old plugin in a full unlinked copy, reproduce its priority and both container links, run a full build, and test SEO, six-language checkout, contribution on/off, tagging and an already-open basket. Never activate both plugins together: both register order/shipping listeners and template overrides.
+No live rollout or successful Plenty integration test of the renamed identity is implied. Historical notes below describe the predecessor.
 
 Isolated test plugin containing a copy of the canonical/head template from
 [waldorfweb/pp-waldorfshop-07](https://github.com/waldorfweb/pp-waldorfshop-07),
