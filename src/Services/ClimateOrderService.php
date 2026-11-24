@@ -68,6 +68,9 @@ class ClimateOrderService
             // This prevents another order event in the same session being tagged.
             $basketItems = $this->items($basket->basketItems, 'variationId');
             $orderItems = $this->items($order->orderItems, 'itemVariationId');
+            if ($basketItems && $basketItems !== $orderItems) {
+                $orderItems = $this->items($order->orderItems, 'itemVariationId', true);
+            }
             $context['basketItemCount'] = count($basketItems);
             $context['orderItemCount'] = count($orderItems);
             if (!$basketItems || $basketItems !== $orderItems) {
@@ -110,10 +113,16 @@ class ClimateOrderService
         return ['version'=>self::DIAGNOSTIC_VERSION, 'events'=>is_array($records) ? $records : []];
     }
 
-    private function items($items, string $variationKey): array
+    private function items($items, string $variationKey, bool $skipCheckoutGift = false): array
     {
         $result = [];
         foreach ($items ?? [] as $item) {
+            if ($skipCheckoutGift && (int)($item->typeId ?? 0) === 1
+                && (float)$item->quantity === 1.0
+                && substr((string)($item->orderItemName ?? ''), -strlen(' (Gratisgeschenk)')) === ' (Gratisgeschenk)') {
+                $skipCheckoutGift = false;
+                continue;
+            }
             $id = $variationKey === 'variationId'
                 ? (int)$item->variationId : (int)$item->itemVariationId;
             if ($id <= 0) {
