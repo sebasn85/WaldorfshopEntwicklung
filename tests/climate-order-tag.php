@@ -182,5 +182,10 @@ namespace {
     $handler(new OrderCreated($order));
     check($relations->findRelationship(88,104,'order') !== null, 'Diagnostic logger failure does not prevent ordering or tagging');
     $GLOBALS['logger'] = $savedLogger;
+    $session->consent = ['basketId'=>10,'accepted'=>true];
+    $order->id = 105; $repo->basket->orderId = 105;
+    $order->orderItems[] = (object)['typeId'=>1,'itemVariationId'=>37374,'quantity'=>1,'orderItemName'=>'Postkartenbuch (Gratisgeschenk)'];
+    $handler(new OrderCreated($order));
+    check($relations->findRelationship(88,105,'order') !== null, 'Checkout gift preserves climate tag');
     echo $GLOBALS['checks']." native climate order tagging checks passed\n";
 }
